@@ -1,0 +1,3 @@
+spacy==3.7.2
+pypinyin==0.50.0
+nerpy==0.1.1
