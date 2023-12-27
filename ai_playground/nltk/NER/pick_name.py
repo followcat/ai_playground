@@ -4,6 +4,12 @@ import spacy
 import pypinyin
 from nerpy import NERModel
 
+from transformers import MBartForConditionalGeneration, MBart50Tokenizer
+
+translate_model_name = 'facebook/mbart-large-50-many-to-many-mmt'
+translate_tokenizer = MBart50Tokenizer.from_pretrained(translate_model_name)
+translate_model = MBartForConditionalGeneration.from_pretrained(translate_model_name)
+
 
 def judge_PER(name, tag):
     if tag == 'PER':
@@ -37,19 +43,30 @@ def pick_NER(text, model="shibing624/bert4ner-base-chinese", OPTION=["PER", "ORG
             if "PER" in OPTION and judge_PER(name, tag):
                 results["PER"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name))
                 )
             if "ORG" in OPTION and judge_ORG(name, tag):
                 results["ORG"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name))
                 )
             if "LOC" in OPTION and judge_LOC(name, tag):
                 results["LOC"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name))
                 )
     return results
+
+
+def translate_zh_to_en(text):
+    translate_tokenizer.src_lang = "zh_CN"
+    encoded_zh = translate_tokenizer(text, return_tensors="pt")
+    generated_tokens = translate_model.generate(**encoded_zh, forced_bos_token_id=translate_tokenizer.lang_code_to_id["en_XX"])
+    translation = translate_tokenizer.decode(generated_tokens[0], skip_special_tokens=True)
+    return translation
 
 
 if __name__ == '__main__':
@@ -69,9 +86,11 @@ if __name__ == '__main__':
 负责人胡湘泽，总经理。
 委托代理人刘滨，男，1960年12月31日出生，汉族，住湖南省长沙市天兴区。
 """
+    print(translate_zh_to_en(text))
     results = pick_NER(text)
     for key in results:
         print(key)
         for each in results[key]:
             print(each)
+
 
