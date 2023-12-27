@@ -3,6 +3,7 @@ import random
 import torch
 import torch.nn as nn
 import torch.optim as optim
+from torch.distributions import Categorical
 
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
@@ -63,9 +64,12 @@ def predict(model, vs, our):
     with torch.no_grad():
         inputs = torch.tensor([[vs, our]], dtype=torch.float32)
         outputs = model(inputs)
-        predicted_move = torch.argmax(outputs, dim=1).item()
+        probabilities = torch.softmax(outputs, dim=1)
+        distribution = Categorical(probabilities)
+        sampled_move = distribution.sample()
     categories = ['石头', '剪刀', '布']
-    return categories[predicted_move]
+    print("预测的概率分布：", probabilities)
+    return categories[sampled_move]
   
 
 def generate_dataset(num_samples, sequence_length):
