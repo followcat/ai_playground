@@ -1,8 +1,9 @@
 import logging
+import itertools
 import collections
 
 import torch
-import spacy
+import hanlp
 import pypinyin
 from nerpy import NERModel
 
@@ -16,6 +17,7 @@ translate_tokenizer = MBart50Tokenizer.from_pretrained(translate_model_name)
 translate_model = None
 
 ner_model = NERModel("bert", "shibing624/bert4ner-base-chinese")
+split_sent = hanlp.load(hanlp.pretrained.eos.UD_CTB_EOS_MUL)
 
 def judge_PER(name, tag):
     if tag == 'PER':
@@ -38,11 +40,10 @@ def judge_LOC(name, tag):
 def pick_NER(text, OPTION=["PER", "ORG", "LOC"], translate=False):
     # model = NERModel("bert", "shibing624/bert4ner-base-chinese")
     # model = NERModel("bertspan", "shibing624/bertspan4ner-base-chinese")
-    global ner_model
+    global ner_model, split_sent
     model = ner_model
-    nlp = spacy.load('zh_core_web_sm')
-    doc = nlp(text)
-    texts = [sent.text for sent in doc.sents]
+    texts = list(itertools.chain(*[split_sent(t) for t in text.split('\n')]))
+    texts = [t + ('。' if len(t) <= 4 else '') for t in texts]
     predictions, raw_outputs, entities = model.predict(texts, split_on_space=False)
     results = collections.defaultdict(list)
     for output in entities:
