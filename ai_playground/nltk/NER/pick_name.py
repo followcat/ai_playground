@@ -1,9 +1,21 @@
+import logging
 import collections
 
+import torch
 import spacy
 import pypinyin
 from nerpy import NERModel
 
+from transformers import MBartForConditionalGeneration, MBart50Tokenizer
+
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+logging.info(f'Using device: {device}')
+
+translate_model_name = 'facebook/mbart-large-50-many-to-many-mmt'
+translate_tokenizer = MBart50Tokenizer.from_pretrained(translate_model_name)
+translate_model = None
+
+ner_model = NERModel("bert", "shibing624/bert4ner-base-chinese")
 
 def judge_PER(name, tag):
     if tag == 'PER':
@@ -23,10 +35,11 @@ def judge_LOC(name, tag):
     return False
 
 
-def pick_NER(text, model="shibing624/bert4ner-base-chinese", OPTION=["PER", "ORG", "LOC"]):
+def pick_NER(text, OPTION=["PER", "ORG", "LOC"], translate=False):
     # model = NERModel("bert", "shibing624/bert4ner-base-chinese")
     # model = NERModel("bertspan", "shibing624/bertspan4ner-base-chinese")
-    model = NERModel("bert", model)
+    global ner_model
+    model = ner_model
     nlp = spacy.load('zh_core_web_sm')
     doc = nlp(text)
     texts = [sent.text for sent in doc.sents]
@@ -37,19 +50,33 @@ def pick_NER(text, model="shibing624/bert4ner-base-chinese", OPTION=["PER", "ORG
             if "PER" in OPTION and judge_PER(name, tag):
                 results["PER"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name) if translate else None)
                 )
             if "ORG" in OPTION and judge_ORG(name, tag):
                 results["ORG"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name) if translate else None)
                 )
             if "LOC" in OPTION and judge_LOC(name, tag):
                 results["LOC"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]))
+                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     translate_zh_to_en(name) if translate else None)
                 )
     return results
+
+
+def translate_zh_to_en(text):
+    global translate_model
+    if translate_model is None:
+        translate_model = MBartForConditionalGeneration.from_pretrained(translate_model_name).to(device)
+    translate_tokenizer.src_lang = "zh_CN"
+    encoded_zh = translate_tokenizer(text, return_tensors="pt").to(device)
+    generated_tokens = translate_model.generate(**encoded_zh, forced_bos_token_id=translate_tokenizer.lang_code_to_id["en_XX"])
+    translation = translate_tokenizer.decode(generated_tokens[0], skip_special_tokens=True)
+    return translation
 
 
 if __name__ == '__main__':
@@ -74,4 +101,5 @@ if __name__ == '__main__':
         print(key)
         for each in results[key]:
             print(each)
+
 
