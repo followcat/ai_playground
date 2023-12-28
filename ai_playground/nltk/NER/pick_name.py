@@ -97,6 +97,7 @@ if __name__ == '__main__':
 负责人胡湘泽，总经理。
 委托代理人刘滨，男，1960年12月31日出生，汉族，住湖南省长沙市天兴区。
 """
+    #print(translate_zh_to_en(text))
     results = pick_NER(text)
     for key in results:
         print(key)
