@@ -6,7 +6,9 @@ import uvicorn
 import argparse
 from functools import partial
 
+from pydantic import BaseModel
 from fastapi import FastAPI, Query
+
 from starlette.middleware.cors import CORSMiddleware
 from loguru import logger
 
@@ -33,16 +35,38 @@ app.add_middleware(
     allow_headers=["*"])
 
 
+class Item(BaseModel):
+    text: str
+
+
 @app.get('/')
 async def index():
     return {"message": "index, docs url: /docs"}
 
 
 @app.get('/pickner')
-async def pickner(q: str = Query(..., min_length=1, max_length=99999999, title='query')):
+async def pickner(q: str):
     try:
         #preds, outputs, entities = s_model.predict([q], split_on_space=False)
         #result_dict = {'entity': entities}
+        loop = asyncio.get_running_loop()
+        result_dict = await loop.run_in_executor(
+            None,
+            partial(pick_NER, q)
+        )
+        logger.debug(f"Successfully get sentence entity, q:{q}")
+        return result_dict
+    except Exception as e:
+        logger.error(e)
+        return {'status': False, 'msg': e}, 400
+
+
+@app.post('/pickner')
+async def pickner(item: Item):
+    try:
+        #preds, outputs, entities = s_model.predict([q], split_on_space=False)
+        #result_dict = {'entity': entities}
+        q = item.text
         loop = asyncio.get_running_loop()
         result_dict = await loop.run_in_executor(
             None,
