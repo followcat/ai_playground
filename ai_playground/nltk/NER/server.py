@@ -1,12 +1,11 @@
 # -*- coding: utf-8 -*-
-"""
-@author:XuMing(xuming624@qq.com)
-@description: pip install fastapi uvicorn
-"""
-import argparse
-import uvicorn
 import sys
 import os
+import asyncio
+import uvicorn
+import argparse
+from functools import partial
+
 from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
 from loguru import logger
@@ -40,11 +39,15 @@ async def index():
 
 
 @app.get('/pickner')
-async def pickner(q: str = Query(..., min_length=1, max_length=1280, title='query')):
+async def pickner(q: str = Query(..., min_length=1, max_length=99999999, title='query')):
     try:
         #preds, outputs, entities = s_model.predict([q], split_on_space=False)
         #result_dict = {'entity': entities}
-        result_dict = pick_NER(q)
+        loop = asyncio.get_running_loop()
+        result_dict = await loop.run_in_executor(
+            None,
+            partial(pick_NER, q)
+        )
         logger.debug(f"Successfully get sentence entity, q:{q}")
         return result_dict
     except Exception as e:
