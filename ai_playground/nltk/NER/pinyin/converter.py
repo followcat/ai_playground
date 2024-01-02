@@ -1,10 +1,9 @@
 import re
 
-from data.loader import chars
-from data.loader import surnames
-from data.loader import words
-
-from collection import Collection
+from NER.pinyin.collection import Collection
+from NER.pinyin.data.loader import chars
+from NER.pinyin.data.loader import surnames
+from NER.pinyin.data.loader import words
 
 
 class Converter:

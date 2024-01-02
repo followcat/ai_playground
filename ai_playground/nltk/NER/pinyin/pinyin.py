@@ -1,5 +1,6 @@
-from converter import Converter
-from collection import Collection
+from NER.pinyin.converter import Converter
+from NER.pinyin.collection import Collection
+
 
 class Pinyin:
     @staticmethod

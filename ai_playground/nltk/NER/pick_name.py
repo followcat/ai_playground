@@ -4,10 +4,10 @@ import collections
 
 import torch
 import hanlp
-import pypinyin
 from nerpy import NERModel
-
 from transformers import MBartForConditionalGeneration, MBart50Tokenizer
+
+from NER.pinyin.pinyin import Pinyin
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 logging.info(f'Using device: {device}')
@@ -51,19 +51,21 @@ def pick_NER(text, OPTION=["PER", "ORG", "LOC"], translate=False):
             if "PER" in OPTION and judge_PER(name, tag):
                 results["PER"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     ''.join([p.capitalize() for p in Pinyin.name(name, 'none').all()]),
                      translate_zh_to_en(name) if translate else None)
                 )
             if "ORG" in OPTION and judge_ORG(name, tag):
                 results["ORG"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     ''.join([p.capitalize() for p in Pinyin.sentence(name,
+                         'none').all()]),
                      translate_zh_to_en(name) if translate else None)
                 )
             if "LOC" in OPTION and judge_LOC(name, tag):
                 results["LOC"].append(
                     (name,
-                     ''.join([p.capitalize() for p in pypinyin.lazy_pinyin(name)]),
+                     ''.join([p.capitalize() for p in Pinyin.sentence(name,
+                         'none').all()]),
                      translate_zh_to_en(name) if translate else None)
                 )
     return results

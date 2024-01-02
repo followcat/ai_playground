@@ -10,10 +10,8 @@ from fastapi import FastAPI, Query
 from starlette.middleware.cors import CORSMiddleware
 from loguru import logger
 
-sys.path.append('..')
 from nerpy import NERModel
-
-from pick_name import pick_NER
+from NER.pick_name import pick_NER
 
 pwd_path = os.path.abspath(os.path.dirname(__file__))
 # Use fine-tuned model
