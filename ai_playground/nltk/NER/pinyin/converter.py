@@ -13,8 +13,8 @@ class Converter:
     SEGMENTS_COUNT = 10
 
     def __init__(self):
-        self.polyphonic = False
-        self.polyphonic_as_list = False
+        self._polyphonic = False
+        self._polyphonic_as_list = False
         self.as_surname = False
         self.no_words = False
         self.cleanup = True
@@ -38,8 +38,8 @@ class Converter:
         return cls()
 
     def polyphonic(self, as_list=False):
-        self.polyphonic = True
-        self.polyphonic_as_list = as_list
+        self._polyphonic = True
+        self._polyphonic_as_list = as_list
         return self
 
     def surname(self):
@@ -109,7 +109,7 @@ class Converter:
             string = re.sub(pattern, '', string)
 
         # 处理多音字
-        if self.polyphonic:
+        if self._polyphonic:
             return self.convert_as_chars(string, True)
 
         if self.no_words:
@@ -135,7 +135,7 @@ class Converter:
                 pinyin_list = chars[char]
                 if polyphonic:
                     formatted_pinyin = [self.format_tone(pinyin, self.tone_style) for pinyin in pinyin_list]
-                    if self.polyphonic_as_list:
+                    if self._polyphonic_as_list:
                         items.append({char: formatted_pinyin})
                     else:
                         items.extend(formatted_pinyin)
